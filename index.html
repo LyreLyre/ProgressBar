@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Test. Progress. Parfenova L.</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        * {
+            margin: 0;
+        }
+
+        .container {
+            --main-color: #005bfe;
+            --bcg-color: #eff3f6;
+            width: 100%;
+            height: 100vh;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-evenly;
+            font-size: 20px;
+            font-family: sans-serif;
+        }
+
+        /*progress-bar*/
+
+        .progress-bar {
+            --width: 136px;
+            --percent: 0;
+            --border-width: 13px;
+            position: relative;
+            width: var(--width);
+            margin: 0 auto;
+            aspect-ratio: 1;
+            transition: 1.5s;
+            -webkit-transition: 1.5s;
+        }
+
+        .progress-bar.animated {
+            animation: 4s cubic-bezier(0.43, 0, 0.2, 1) infinite progress-bar-rotate;
+        }
+        @keyframes progress-bar-rotate {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .progress-bar:before{
+            content: "";
+            position: absolute;
+            width: var(--width);
+            border-radius: 50%;
+            inset: 0;
+            background: conic-gradient(var(--main-color) calc(var(--percent)*1%), var(--bcg-color) 0);
+            -webkit-mask:radial-gradient(farthest-side,#0000 calc(99% - var(--border-width)),#000 calc(100% - var(--border-width)));
+            mask:radial-gradient(farthest-side,#0000 calc(99% - var(--border-width)),#000 calc(100% - var(--border-width)));
+        }
+
+        /*inputs*/
+
+        .progress-bar-inputs {
+            width: 155px;
+            display: flex;
+            flex-direction: column;
+            margin: 0 auto;
+        }
+
+        .progress-bar-inputs label {
+            display: flex;
+            align-items: center;
+        }
+
+        .progress-bar-inputs input[type="number"]::-webkit-outer-spin-button,.progress-bar-inputs input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+        }
+        .progress-bar-inputs input[type='number'],
+        .progress-bar-inputs input[type="number"]:hover,
+        .progress-bar-inputs input[type="number"]:focus {
+            appearance: none;
+            -moz-appearance: textfield;
+        }
+
+        .progress-bar-input, .value-input {
+            width: 54px;
+            height: 32px;
+            border-radius: 30px;
+        }
+
+        .progress-bar-input {
+            position: relative;
+            display: inline-block;
+            margin: 6px 23px 10px 0;
+        }
+
+        .value-input {
+            box-sizing: border-box;
+            padding: 6px;
+            font-family: sans-serif;
+            font-size: 18px;
+            text-align: center;
+        }
+
+        .switch__input {display:none;}
+
+        .switch__slider {
+            position: absolute;
+            cursor: pointer;
+            inset: 0;
+            background-color: var(--bcg-color);
+            -webkit-transition: .4s;
+            transition: .4s;
+        }
+
+        .switch__slider:before {
+            position: absolute;
+            content: "";
+            height: 28px;
+            width: 28px;
+            left: 2px;
+            bottom: 2px;
+            background-color: white;
+            -webkit-transition: .4s;
+            transition: .4s;
+        }
+
+        .switch__input:checked + .switch__slider {
+            background-color: var(--main-color);
+        }
+
+        .switch__input:checked + .switch__slider:before {
+            -webkit-transform: translateX(22px);
+            -ms-transform: translateX(22px);
+            transform: translateX(22px);
+        }
+
+        .switch__slider.round {
+            border-radius: 34px;
+        }
+
+        .switch__slider.round:before {
+            border-radius: 50%;
+        }
+
+        /*медиа-запросы*/
+
+        @media (max-width: 415px) and (max-height: 916px) and (orientation: portrait) {
+            .container {
+                max-height: 100vh;
+            }
+        }
+
+        @media (max-width: 916px) and (max-height: 415px) and (orientation: landscape) {
+            .container {
+                flex-direction: row;
+            }
+
+            .progress-bar, .progress-bar-inputs {
+                margin: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="progress-bar" id="progress-bar"></div>
+    <div class="progress-bar-inputs">
+        <label>
+            <span class="progress-bar-input">
+                <input type="number" value="0" min="0" max="100" class="value-input" id="value-input">
+            </span>
+            Value
+        </label>
+        <label>
+            <span class="switch progress-bar-input">
+                <input type="checkbox" class="switch__input" id="animate-input">
+                <span class="switch__slider round"></span>
+            </span>
+            Animate
+        </label>
+        <label>
+            <span class="switch progress-bar-input">
+                <input type="checkbox" class="switch__input" id="hide-input">
+                <span class="switch__slider round"></span>
+            </span>
+            Hide
+        </label>
+    </div>
+</div>
+
+<script>
+    const ProgressBar = {
+        progressElement: document.getElementById('progress-bar'), // получаем объект кольца прогресса
+        valueInput: document.getElementById('value-input'), // объект value-input
+        progressValue: 0, // начальное значение value-input
+        animateInput: document.getElementById('animate-input'), // объект animate-input
+        hideInput: document.getElementById('hide-input'), // объект hide-input
+
+        // метод, который назначает обработчики событий для каждого элемента ввода, вызовем его в конце скрипта, чтобы обеспечить инициализацию и настройку обработчиков событий при запуске кода
+        initialize: function() {
+            this.valueInput.addEventListener('blur', () => {
+                // проверяем значение с value-input и обновляем значение progressValue:
+                let value = parseInt(this.valueInput.value, 10);
+                if (isNaN(value) || value < 0) {
+                    value = 0;
+                    this.valueInput.value = value;
+                } else if (value > 100) {
+                    value = 100;
+                    this.valueInput.value = value;
+                }
+                this.progressValue = value;
+                this.setProgressValue(this.progressValue);
+            });
+
+            this.animateInput.addEventListener('change', () => {
+                this.toggleAnimation();
+            });
+
+            this.hideInput.addEventListener('change', () => {
+                this.toggleVisibility();
+            });
+        },
+
+        //  передаем значение value-input в значение progress-bar
+        setProgressValue: function(value) {
+            this.progressElement.style.setProperty('--percent', value);
+
+            // добавим класс объекту progress-bar, на случай добавления какого-либо события по достижению прогресса 100%:
+            if (value === 100) {
+                this.progressElement.classList.add('progress-complete');
+            } else {
+                this.progressElement.classList.remove('progress-complete');
+            }
+        },
+
+        // проверяем значение animate-input и запускаем/прекращаем анимацию в зависимости от значения
+        toggleAnimation: function() {
+            if (this.animateInput.checked) {
+                this.progressElement.classList.add('animated');
+            } else {
+                this.progressElement.classList.remove('animated');
+            }
+        },
+
+        // проверяем значение hide-input и скрываем/отображаем блок в зависимости от значения
+        toggleVisibility: function() {
+            if (this.hideInput.checked) {
+                // this.progressElement.hidden = true;
+                this.progressElement.style.opacity = '0';
+            } else {
+                // this.progressElement.hidden = false;
+                this.progressElement.style.opacity = '1';
+            }
+        },
+
+        // сброс значения и состояние блока прогресса
+        reset() {
+            this.progressValue = 0;
+            this.setProgressValue(this.progressValue);
+            this.progressElement.classList.remove('progress-complete');
+            this.animateInput.checked = false;
+            this.toggleAnimation();
+            this.hideInput.checked = false;
+            this.toggleVisibility();
+        }
+    };
+
+    ProgressBar.initialize();
+</script>
+</body>
+</html>
